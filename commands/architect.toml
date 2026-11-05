@@ -1,0 +1,5 @@
+# ~/.gemini/commands/architect.toml -> Invoked via /architect
+description = "Scaffolds and audits modular AI system instructions across 5 orthogonal layers."
+prompt = """
+Follow the architectural specifications inside @{references} and @{SKILL.md} to audit or scaffold the requested system: {{args}}
+"""
