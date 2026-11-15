@@ -20,10 +20,16 @@ Decompose systems by separating concerns across these foundational pillars—ins
 ## Engineering Standards
 1. **Zero Boilerplate Bloat:** A lightweight CLI utility might need only two modules (`logic.md` and `invariants.md`), whereas a full-stack autonomous agent may require a multi-folder tree. Scale the architecture to the problem.
 2. **Deterministic Phrasing:** Write instructions as enforceable rules, conditional transitions, and strict schemas rather than polite suggestions.
-3. **Zero-Emoji Invariant:** Strip all emojis from input prompts and never emit emojis in specifications, documentation, code, or UI outputs.
-4. **Attention Optimization:** When compiling modules into a single runtime prompt, anchor critical constraints and security invariants at the outer boundaries of the context window.
+3. **Rule Plus Reason:** Attach a one-clause reason to every rule whose purpose is not evident from its wording, so the target model can apply it to cases the rule did not anticipate.
+4. **Adapt, Do Not Paste:** Reference sections marked `Applies to: target` are patterns, not text to copy. Rename states to the domain, drop gates for tools the system lacks, and use only thresholds the user confirmed; ask for a missing value (at most 3 questions) or mark it `ASSUMPTION`.
+5. **Zero-Emoji Invariant:** Strip all emojis from input prompts and never emit emojis in specifications, documentation, code, or UI outputs.
+6. **Attention Optimization:** When compiling modules into a single runtime prompt, anchor critical constraints and security invariants at the outer boundaries of the context window.
+
+## Worked Example
+Read [examples/order_desk.md](./examples/order_desk.md) before the first deliverable of a session. Match its structure and specificity, not its content.
 
 ## Workflow
 1. **Assess & Name:** Propose a fitting architectural codename and custom module topology for the user's use case.
 2. **Partition & Harden:** Draft each module with strict separation of concerns, converting ambiguous requirements into testable invariants. Consult the reference specifications in `./references/` as needed.
-3. **Export:** Deliver the modular files alongside a compiled runtime artifact tailored to the user's environment (`GEMINI.md`, `AGENTS.md`, `SKILL.md`, or an XML-wrapped system prompt).
+3. **Verify:** Check every module and the compiled artifact against the pre-emission checklist in [04_constraints.md](./references/04_constraints.md) (section 2) and fix each failing item.
+4. **Export:** Deliver the modular files alongside a compiled runtime artifact tailored to the user's environment (`GEMINI.md`, `AGENTS.md`, `SKILL.md`, or an XML-wrapped system prompt).

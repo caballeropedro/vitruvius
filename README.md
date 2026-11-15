@@ -1,209 +1,166 @@
-# Vitruvius: First-Principles Modular AI Systems Architect
+# Vitruvius
 
-**Vitruvius** is a cross-platform, modular specification architecture for designing, auditing, and compiling production-grade AI system instructions across **Gemini**, **ChatGPT (OpenAI / Codex)**, **Claude Code**, and **Google Antigravity**.
+Vitruvius is a skill that turns a rough prompt or agent idea into a modular, testable system specification. You give it a paragraph like "you are a helpful support bot"; it returns a defect audit, a set of single-purpose modules, and a compiled system prompt ready to deploy.
 
-It supports both the open **`SKILL.md`** standard (`.agents/skills/`) and native workspace instruction formats (`GEMINI.md`, `AGENTS.md`, Gemini Gems, and ChatGPT Projects), decomposing monolithic prompts across **5 orthogonal architectural axes**.
+It ships as a `SKILL.md` package, as `AGENTS.md` / `GEMINI.md` workspace rules, and as paste-ready prompts, so the same specification runs in Claude Code, Codex, Gemini CLI, Google Antigravity, and the Gemini and ChatGPT web apps.
 
----
+## What It Does
 
-## Architectural Overview
+Vitruvius replaces rules that cannot be checked with rules that can. From the [worked example](./examples/order_desk.md):
+
+| Rough Prompt | Vitruvius Output |
+| :--- | :--- |
+| "Be friendly and concise" | Reply in at most 120 words; sentence 1 states the outcome or the one thing needed from the customer |
+| "Don't refund too much" | Call `issue_refund` only when the identity check passed, the amount is within `refundable_amount` and 100.00 USD, and the customer confirmed that exact amount |
+| "If the customer is angry, escalate" | Hand off when the customer asks for a person, mentions a chargeback, lawyer, or regulator, or the same request fails twice |
+| "Use the order tool when needed" | A contract per tool: when to call it, when not to, how to confirm success, what to do on failure |
+
+The 100.00 USD limit was not invented. The architect asks for missing thresholds, tool behavior, and output channels (at most 3 questions) or marks them `ASSUMPTION`.
+
+## How It Works
+
+Every request runs through five steps:
+
+| Step | Output |
+| :--- | :--- |
+| 1. Diagnose | A defect table: each source rule, the authoring law it breaks, and its rewrite |
+| 2. Propose taxonomy | A system name and a module tree sized to the problem |
+| 3. Synthesize modules | One file per concern, written as states, contracts, and thresholds |
+| 4. Compile | A single runtime prompt with security and constraints at the top and restated at the end |
+| 5. Verify | A pass over the seven-item pre-emission checklist in [`04_constraints.md`](./references/04_constraints.md) |
+
+Systems are evaluated on five axes. Only the axes a system needs become modules; the worked example uses three.
+
+| Axis | Reference Module | Covers |
+| :--- | :--- | :--- |
+| Logic | [`01_logic.md`](./references/01_logic.md) | State machines, tool contracts, routing, loop bounds |
+| Visual | [`02_visual.md`](./references/02_visual.md) | Response structure, containers by data shape, UI tokens |
+| Security | [`03_security.md`](./references/03_security.md) | Untrusted input, confirmation gates by risk tier, secret hygiene |
+| Constraints | [`04_constraints.md`](./references/04_constraints.md) | Banned behaviors, the compile envelope, the checklist, retry caps |
+| Memory | [`05_context_memory.md`](./references/05_context_memory.md) | Source-of-truth order, context loading, scratchpad |
+
+Each section of a reference module is labelled `Applies to: architect`, `target`, or `both`, which separates rules the architect follows from patterns it adapts into the system being designed.
 
 ```mermaid
-flowchart TD
-    Input["User Idea / Monolithic Prompt / Agent Concept"] --> Architect["Vitruvius: First-Principles AI Architect"]
-    
-    subgraph Axes["5 Orthogonal Architectural Axes"]
-        L1["01_logic.md\nCognitive & State Machines"]
-        L2["02_visual.md\nUI Schemas & Scannability"]
-        L3["03_security.md\nTrust Boundaries & HITL Gates"]
-        L4["04_constraints.md\nInvariants & Negative Rules"]
-        L5["05_context_memory.md\nSource Hierarchy & Scratchpad"]
-    end
-
-    Architect --> L1 & L2 & L3 & L4 & L5
-    L1 & L2 & L3 & L4 & L5 --> Compiler["Attention-Aware Compiler"]
-
-    subgraph Targets["Target Runtime Outputs"]
-        T1["Compiled XML System Prompt"]
-        T2["SKILL.md + references/"]
-        T3["GEMINI.md / AGENTS.md"]
-    end
-
-    Compiler --> T1 & T2 & T3
+flowchart LR
+    Input["Rough prompt or agent idea"] --> Diagnose["Diagnose"]
+    Diagnose --> Modules["Modules<br/>(only the axes needed)"]
+    Modules --> Compile["Compile<br/>(security first, restated last)"]
+    Compile --> Verify["Verify<br/>(7-item checklist)"]
+    Verify --> Output["Module files +<br/>compiled runtime prompt"]
 ```
 
----
+## Install
 
-## Repository Structure
+| Platform | Root Instruction | Reference Files |
+| :--- | :--- | :--- |
+| Claude Code | `.claude/skills/first-principles-architect/SKILL.md` | Copied with the skill folder |
+| Codex CLI | [`AGENTS.md`](./AGENTS.md) or `.agents/skills/first-principles-architect/SKILL.md` | Inside the skill folder |
+| Google Antigravity | [`GEMINI.md`](./GEMINI.md) and `.agents/skills/`, auto-discovered | Inside the skill folder |
+| Gemini CLI | [`GEMINI.md`](./GEMINI.md) or the `/architect` command | Injected from the current workspace |
+| Gemini web (Skills) | Upload [`SKILL.md`](./SKILL.md) | Attach in the Skill uploader |
+| Gemini web (Gems) | Paste a [root prompt](#root-prompts) into Instructions | Upload as Knowledge |
+| ChatGPT web (Projects, GPTs) | Paste a [root prompt](#root-prompts) into Instructions | Upload as Knowledge or Project Files |
+
+"Reference files" means the five files in [`references/`](./references/) plus [`examples/order_desk.md`](./examples/order_desk.md).
+
+### Claude Code
+
+Copy the skill folder into a project, or into `~/.claude/skills/` to make it available everywhere:
+
+```bash
+mkdir -p .claude/skills/
+cp -r .agents/skills/first-principles-architect .claude/skills/
+```
+
+### Codex CLI
+
+Opening this repository is enough: Codex reads [`AGENTS.md`](./AGENTS.md) and the skill at `.agents/skills/first-principles-architect/`. To use it in another repository, copy that folder to the same path there.
+
+### Google Antigravity
+
+Opening this repository loads [`GEMINI.md`](./GEMINI.md), [`AGENTS.md`](./AGENTS.md), and the workspace skill. To install the skill for all workspaces:
+
+```bash
+mkdir -p ~/.gemini/config/skills/
+cp -r .agents/skills/first-principles-architect ~/.gemini/config/skills/
+```
+
+### Gemini CLI
+
+Either place [`GEMINI.md`](./GEMINI.md) at the root of your workspace, or install the `/architect` command:
+
+```bash
+mkdir -p .gemini/commands/
+cp commands/architect.toml .gemini/commands/
+```
+
+The command injects `@{references}`, `@{examples}`, and `@{SKILL.md}`. Gemini CLI resolves those paths against the current workspace, not the location of the `.toml` file, so the workspace must contain all three. A copy in `~/.gemini/commands/` works only when run from such a workspace.
+
+### Gemini Web
+
+- **Skills:** go to Settings > Skills > Upload, upload [`SKILL.md`](./SKILL.md), and attach the reference files. Invoke it with `/first-principles-architect`.
+- **Gems:** create a Gem, paste a [root prompt](#root-prompts) into Instructions, and upload the reference files as Knowledge.
+
+### ChatGPT Web
+
+In a Project or custom GPT, upload the reference files as Knowledge or Project Files, then paste a [root prompt](#root-prompts) into Instructions. The root prompt is what makes the model treat the uploaded files as binding modules instead of background reading.
+
+## Use
+
+Invoke the skill (`/first-principles-architect`, or `/architect` in Gemini CLI) with the thing you want designed or audited:
+
+```text
+/first-principles-architect Audit this system prompt and rebuild it: <paste prompt>
+```
+
+```text
+/first-principles-architect Design an agent that triages GitHub issues. Tools: list_issues, add_label, close_issue.
+```
+
+Listing the tools the system can call, and where its output is rendered, saves a round of clarifying questions. With `AGENTS.md` or `GEMINI.md` loaded, no command is needed; describe the system in plain language.
+
+## Root Prompts
+
+For web apps that take a single Instructions field. Open the file and copy its full contents.
+
+| Prompt | Use When |
+| :--- | :--- |
+| [`dynamic_root_meta_prompt.xml`](./prompts/dynamic_root_meta_prompt.xml) | The architect should size the module tree to the problem and may merge or omit axes. This is the default choice. |
+| [`universal_root_prompt.xml`](./prompts/universal_root_prompt.xml) | Every system must be partitioned into all five canonical layers, `01_logic` through `05_context_memory` |
+
+## Repository Layout
 
 ```text
 vitruvius/
-├── README.md                                 # Cross-platform guide & documentation
-├── SKILL.md                                  # Root agnostic skill definition
-├── GEMINI.md                                 # Native workspace rules for Gemini CLI & Antigravity
-├── AGENTS.md                                 # Native workspace rules for OpenAI Codex & Antigravity
-├── references/                               # 5 Orthogonal Architectural Reference Modules
-│   ├── 01_logic.md                           # Cognitive engine, state machines, tool contracts
-│   ├── 02_visual.md                          # Generative UI schemas, tokens, scannability thresholds
-│   ├── 03_security.md                        # Injection defense, PII redaction, HITL execution gates
-│   ├── 04_constraints.md                     # Output envelopes, negative rules, retry budgets
-│   └── 05_context_memory.md                  # Source-of-truth priority, ephemeral scratchpad schemas
-├── prompts/                                  # Ready-to-paste Root Prompts for Web UIs
-│   ├── dynamic_root_meta_prompt.xml          # Dynamic First-Principles Root Meta-Prompt
-│   └── universal_root_prompt.xml             # Strict 5-Layer Universal Root Routing Prompt
+├── SKILL.md                  # Skill definition (canonical)
+├── AGENTS.md                 # Workspace rules for Codex and Antigravity (canonical)
+├── GEMINI.md                 # Workspace rules for Gemini CLI and Antigravity (generated)
+├── references/               # The five axis modules (canonical)
+├── examples/
+│   └── order_desk.md         # Worked example: rough prompt in, compiled prompt out
+├── prompts/                  # Paste-ready root prompts for web apps
 ├── commands/
-│   └── architect.toml                        # Gemini CLI custom slash command (/architect)
-└── .agents/
-    └── skills/
-        └── first-principles-architect/       # Auto-discovered skill package (.agents/skills standard)
-            ├── SKILL.md
-            └── references/
-                ├── 01_logic.md
-                ├── 02_visual.md
-                ├── 03_security.md
-                ├── 04_constraints.md
-                └── 05_context_memory.md
+│   └── architect.toml        # Gemini CLI /architect command
+├── scripts/
+│   └── sync.sh               # Regenerates the generated copies; --check detects drift
+└── .agents/skills/first-principles-architect/   # Skill package (generated mirror)
 ```
 
----
+## Contributing
 
-## Quick Cross-Platform Cheat Sheet
+Edit only the canonical sources. These copies are generated and are overwritten by the sync script:
 
-| Platform | Where the Root Instruction Goes | Where the 5 Modular Reference Files Go |
-| :--- | :--- | :--- |
-| **Gemini Web (Skills)** | Upload [`SKILL.md`](./SKILL.md) via **Settings > Skills** | Attach [`references/*.md`](./references/) inside the Skill uploader |
-| **Gemini Web (Gems)** | Paste [`dynamic_root_meta_prompt.xml`](./prompts/dynamic_root_meta_prompt.xml) into **Gem Instructions** | Upload [`references/*.md`](./references/) into Gem **Knowledge** |
-| **Gemini CLI** | [`GEMINI.md`](./GEMINI.md) or `~/.gemini/commands/architect.toml` | Injected dynamically via `@{references}` |
-| **Google Antigravity** | Auto-discovered via [`GEMINI.md`](./GEMINI.md) & `.agents/skills/` | Stored in `.agents/skills/first-principles-architect/references/` |
-| **ChatGPT / Codex CLI** | [`AGENTS.md`](./AGENTS.md) or `.agents/skills/first-principles-architect/SKILL.md` | Stored in `.agents/skills/first-principles-architect/references/` |
-| **ChatGPT Web (Projects / GPTs)** | Paste Root Prompt into Project / GPT **Instructions** box | Upload [`references/*.md`](./references/) as **Knowledge / Project Files** |
-| **Claude Code** | `.claude/skills/first-principles-architect/SKILL.md` | Stored alongside `SKILL.md` in `.claude/skills/first-principles-architect/references/` |
+| Canonical Source | Generated Copy |
+| :--- | :--- |
+| [`SKILL.md`](./SKILL.md) | `.agents/skills/first-principles-architect/SKILL.md` |
+| [`references/`](./references/) | `.agents/skills/first-principles-architect/references/` |
+| [`examples/`](./examples/) | `.agents/skills/first-principles-architect/examples/` |
+| [`AGENTS.md`](./AGENTS.md) | [`GEMINI.md`](./GEMINI.md) (title line differs) |
 
----
-
-## Platform Deployment Guide
-
-### 1. For Gemini (Web App, Gems & Gemini CLI)
-
-Gemini supports three distinct ways to deploy this modular skill architecture:
-
-* **Gemini Skills (Native `SKILL.md` Upload):**
-  Go to **Settings > Skills > Upload**, upload [`SKILL.md`](./SKILL.md), and attach the modular reference files (`01_logic.md` through `05_context_memory.md`) as supplementary context files. Invoke it in any chat using `/first-principles-architect`.
-* **Gemini CLI (`GEMINI.md` & Custom Commands):**
-  Place [`GEMINI.md`](./GEMINI.md) at the root of your workspace, or copy [`commands/architect.toml`](./commands/architect.toml) to `~/.gemini/commands/architect.toml` using Gemini CLI's native `@{path/to/dir}` file-injection syntax:
-  ```toml
-  # ~/.gemini/commands/architect.toml -> Invoked via /architect
-  description = "Scaffolds and audits modular AI system instructions across 5 orthogonal layers."
-  prompt = """
-  Follow the architectural specifications inside @{references} and @{SKILL.md} to audit or scaffold the requested system: {{args}}
-  """
-  ```
-* **Gemini Gems:**
-  In the Gemini web app, create a new **Gem**, paste either the **Dynamic Root Meta-Prompt** ([`prompts/dynamic_root_meta_prompt.xml`](./prompts/dynamic_root_meta_prompt.xml)) or the **Universal 5-Layer Root Prompt** ([`prompts/universal_root_prompt.xml`](./prompts/universal_root_prompt.xml)) into the **Instructions** box, and upload `references/01_logic.md` through `05_context_memory.md` into the Gem's **Knowledge** section.
-
----
-
-### 2. For ChatGPT (Plugins, Codex / `AGENTS.md`, Projects & Custom GPTs)
-
-OpenAI has converged on the open `.agents/skills` standard while supporting **Projects** and **Plugins/GPTs**:
-
-* **ChatGPT Codex & Dev Environments (`AGENTS.md` + `.agents/skills/`):**
-  OpenAI's agentic coding environment natively reads repo-specific skills from `.agents/skills/first-principles-architect/SKILL.md` (alongside its `references/` directory) and persistent repository rules from [`AGENTS.md`](./AGENTS.md).
-* **ChatGPT Projects / Plugins / Custom GPTs (Web UI):**
-  Use a **Two-Tier Knowledge Architecture**:
-  1. Upload the 5 layer files (`01_logic.md`, `02_visual.md`, `03_security.md`, `04_constraints.md`, `05_context_memory.md`) as **Knowledge / Project Files**.
-  2. Paste the **Dynamic Root Meta-Prompt** or **Universal Root Routing Prompt** below into the main **Instructions** field so the model treats those uploaded files as strict architectural modules rather than passive reference docs.
-
----
-
-### 3. For Claude Code & Google Antigravity
-
-* **Google Antigravity:** Opening this repository automatically loads [`GEMINI.md`](./GEMINI.md), [`AGENTS.md`](./AGENTS.md), and the workspace skill at `.agents/skills/first-principles-architect/SKILL.md`. To install globally across all workspaces:
-  ```bash
-  mkdir -p ~/.gemini/config/skills/
-  cp -r .agents/skills/first-principles-architect ~/.gemini/config/skills/
-  ```
-* **Claude Code:** Copy the skill directory into `.claude/skills/`:
-  ```bash
-  mkdir -p .claude/skills/
-  cp -r .agents/skills/first-principles-architect .claude/skills/
-  ```
-
----
-
-## Root Prompts Reference
-
-### Option A: The Dynamic First-Principles Root Meta-Prompt
-*File: [`prompts/dynamic_root_meta_prompt.xml`](./prompts/dynamic_root_meta_prompt.xml)*
-
-Governs the AI through first-principles architectural laws and dynamic module scaling rather than rigid file templates:
-
-```xml
-<meta_objective>
-You are an autonomous First-Principles AI Systems Architect. Whenever a user presents an idea, workflow, rough prompt, or agent concept, your role is to deconstruct it into an orthogonal, modular specification architecture. 
-
-You have complete architectural liberty to:
-1. Coin a sharp, domain-specific name, identity, and command slug for the target system.
-2. Dynamically determine the folder topology, file naming conventions, and module granularity based on the system's actual needs (never force unnecessary boilerplate folders if a leaner structure is superior).
-3. Adapt the output format seamlessly across target runtimes (single-file XML runtime prompt, multi-file directory tree, SKILL.md, GEMINI.md, or AGENTS.md).
-</meta_objective>
-
-<architectural_axes>
-Evaluate every system across five orthogonal axes and instantiate only the modules required by the domain:
-
-1. COGNITIVE & LOGIC: Reasoning loops, state transitions (IF condition -> THEN state), task decomposition, routing heuristics, and tool-calling preconditions.
-2. VISUAL & INTERFACE: Generative UI schemas, design tokens, layout hierarchy, visual perception rules, and formatting thresholds.
-3. SECURITY & TRUST: Untrusted input isolation, prompt-injection boundaries, PII/secret redaction, and human-in-the-loop (HITL) execution gates for state-mutating actions.
-4. INVARIANTS & CONSTRAINTS: Strict output schemas, negative rules (explicit prohibitions), latency/token budgets, and deterministic error fallbacks.
-5. STATE & MEMORY: Context retrieval priority, conflict resolution between sources, and ephemeral session scratchpads.
-</architectural_axes>
-
-<authoring_laws>
-- Enforce Orthogonality: Never mix visual formatting rules with core reasoning logic or security boundaries. Each module must serve a single functional responsibility.
-- Verifiable Rules Over Prose: Replace vague stylistic advice ("be helpful, concise, and safe") with testable, deterministic instructions ("Omit conversational preambles; lead sentence 1 with the verdict; halt and request confirmation before invoking write tools").
-- Zero-Emoji Invariant: Delete all emojis from source text and never emit emojis in specifications, documentation, code, or responses.
-- Attention-Aware Ordering: Place non-negotiable identity, security, and core constraints at the top and bottom boundaries of compiled prompts to prevent middle-context dilution.
-- Dynamic Knowledge Binding: If reference files are attached in the workspace or project knowledge, inspect their contents dynamically and treat them as active modular constraints rather than passive documentation.
-</authoring_laws>
-
-<execution_protocol>
-When given a request to design, refactor, or audit an AI system:
-1. DIAGNOSE: Identify the core intent, required capabilities, implicit failure modes, and ideal module boundaries.
-2. PROPOSE TAXONOMY: Present a tailored system name and a clean, custom directory/module tree suited to the project's scale.
-3. SYNTHESIZE MODULES: Write the contents of each module using crisp invariants, explicit state machines, and typed contracts.
-4. COMPILE: Provide the unified runtime prompt or platform-specific configuration file ready for immediate deployment.
-</execution_protocol>
+```bash
+scripts/sync.sh          # regenerate after editing a canonical source
+scripts/sync.sh --check  # exit 1 on drift; suitable for CI or a pre-commit hook
 ```
 
----
-
-### Option B: The Strict 5-Layer Universal Root Routing Prompt
-*File: [`prompts/universal_root_prompt.xml`](./prompts/universal_root_prompt.xml)*
-
-Use this when you want every audited system partitioned strictly into the 5 canonical folders (`01_logic` through `05_context_memory`):
-
-```xml
-<system_role>
-You are the Modular AI Specification Architect. Your purpose is to design, audit, and compile production-grade AI system instructions separated into 5 strict architectural layers:
-1. 01_logic (Cognitive Engine, State Machines, Tool Orchestration)
-2. 02_visual (Generative UI Schemas, Design Tokens, Layout Scaffolding)
-3. 03_security (Injection Defenses, PII Sanitization, Execution Gates)
-4. 04_constraints (Format Invariants, Negative Rules, Resource Budgets)
-5. 05_context_memory (RAG Hierarchy, Ephemeral Scratchpad Schemas)
-</system_role>
-
-<file_routing_protocol>
-If modular specification files (01_logic.md, 02_visual.md, 03_security.md, 04_constraints.md, 05_context_memory.md) are attached in your Knowledge/Project files, treat them as active executable constraints—not optional reading:
-- Always consult `03_security.md` and `04_constraints.md` BEFORE generating any system specification.
-- Enforce `01_logic.md` state transitions (`IF <condition> -> THEN <action>`) for all agent workflows.
-- Enforce `02_visual.md` component contracts and scannability thresholds for all UI outputs.
-</file_routing_protocol>
-
-<execution_workflow>
-Whenever the user gives you an AI idea, rough prompt, or agent workflow:
-1. AUDIT: Identify mixed concerns (e.g., visual rules tangled with business logic or missing security boundaries).
-2. PARTITION: Break the system down into the 5 canonical folders (`01_logic/` through `05_context_memory/`).
-3. HARDEN: Convert vague prose ("be helpful and concise") into deterministic invariants, state transitions, and JSON/XML schemas. Strip all emojis and enforce a strict zero-emoji output constraint.
-4. COMPILE: Output both the individual modular files AND the compiled runtime prompt wrapped in semantic XML tags (`<system_security>`, `<system_constraints>`, `<cognitive_logic>`, `<visual_contract>`, `<working_memory>`), or adapt it directly into `GEMINI.md`, `AGENTS.md`, or `SKILL.md` format upon request.
-</execution_workflow>
-```
+[`prompts/dynamic_root_meta_prompt.xml`](./prompts/dynamic_root_meta_prompt.xml) is the Markdown-free variant of `AGENTS.md` and is kept in step by hand. The specification follows its own rules: no emojis, no untestable adjectives in rules, and no prose paragraph over 75 words.

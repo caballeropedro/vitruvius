@@ -1,5 +1,8 @@
-# ~/.gemini/commands/architect.toml -> Invoked via /architect
+# Gemini CLI custom command, invoked via /architect.
+# @{...} paths resolve against the current workspace, not this file's location.
+# Install as <project>/.gemini/commands/architect.toml in a workspace that contains
+# references/, examples/ and SKILL.md (this repo, or a project you copied them into).
 description = "Scaffolds and audits modular AI system instructions across 5 orthogonal layers."
 prompt = """
-Follow the architectural specifications inside @{references} and @{SKILL.md} to audit or scaffold the requested system: {{args}}
+Follow the architectural specifications inside @{references} and @{SKILL.md}, calibrated by the worked example in @{examples}, to audit or scaffold the requested system: {{args}}
 """
